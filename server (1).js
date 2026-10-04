@@ -74,6 +74,10 @@ function send(res, code, obj) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
+       if (url.pathname === '/googlef444fae2492c7850.html') {
+       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+       return res.end('google-site-verification: googlef444fae2492c7850.html');
+     }
 
   if (url.pathname === '/api/flights') {
     if (!TOKEN) return send(res, 503, { ok: false, error: 'Token set nahi hai. .env file me TRAVELPAYOUTS_TOKEN daalo.' });
