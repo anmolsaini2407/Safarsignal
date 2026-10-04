@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SafarSignal - Trip se pehle check karo: GO, WAIT ya AVOID</title>
+<meta name="description" content="SafarSignal live weather, air quality, best travel dates, crowd pressure aur flight prices dekhkar batata hai ki kisi destination ke liye abhi GO, WAIT ya AVOID hai.">
+<meta property="og:title" content="SafarSignal - GO, WAIT ya AVOID">
+<meta property="og:description" content="Live weather, best dates, crowd pressure aur flight prices ek jagah.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#3b5bdb">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#14213d;--mute:#6b7690;--line:#e3e8f2;--brand:#3b5bdb;
+--go:#16a34a;--wait:#d97706;--avoid:#dc2626;--gobg:#dcfce7;--waitbg:#fef3c7;--avoidbg:#fee2e2}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1424;--card:#171f35;--ink:#eef1fa;--mute:#93a0bd;--line:#26304d;--brand:#7c93ff;
+--gobg:#12361f;--waitbg:#3d2e0c;--avoidbg:#3f1616}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.45}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:10px;padding:8px 0 14px}
+.logo{font-weight:800;font-size:22px;letter-spacing:-.5px}.logo span{color:var(--brand)}
+.tag{color:var(--mute);font-size:13px}
+.searchbox{position:relative}
+input{width:100%;padding:14px 16px;font-size:16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);outline:none}
+input:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 25%,transparent)}
+.sugg{position:absolute;left:0;right:0;top:100%;margin-top:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.sugg button{display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font-size:15px;cursor:pointer}
+.sugg button:last-child{border:0}.sugg button:hover{background:var(--bg)}
+.sugg small{color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.chip{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font-size:14px}
+.chip:hover{border-color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px}
+h2{margin:0 0 10px;font-size:16px}
+.hero{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.place{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.sub{color:var(--mute);font-size:14px}
+.badge{padding:12px 20px;border-radius:16px;font-weight:800;font-size:22px;text-align:center}
+.badge small{display:block;font-size:12px;font-weight:600;opacity:.85}
+.GO{background:var(--gobg);color:var(--go)}.WAIT{background:var(--waitbg);color:var(--wait)}.AVOID{background:var(--avoidbg);color:var(--avoid)}
+.now{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin-top:14px}
+.temp{font-size:54px;font-weight:800;letter-spacing:-2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;flex:1;min-width:260px}
+.stat{background:var(--bg);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-size:17px}.stat span{font-size:12px;color:var(--mute)}
+ul.why{margin:12px 0 0;padding-left:18px;color:var(--mute);font-size:14px}
+.best{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.bd{border:1px solid var(--line);border-radius:14px;padding:12px}
+.bd b{font-size:15px}.bd div{font-size:13px;color:var(--mute);margin-top:2px}
+.strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.day{min-width:92px;flex:0 0 auto;text-align:center;border:1px solid var(--line);border-radius:14px;padding:10px 6px}
+.day .d{font-size:12px;color:var(--mute)}.day .e{font-size:24px}.day .t{font-size:13px;font-weight:600}
+.day .p{font-size:12px;color:var(--mute)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-top:4px}
+.dot.GO{background:var(--go)}.dot.WAIT{background:var(--wait)}.dot.AVOID{background:var(--avoid)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.na{border:1px dashed var(--line);border-radius:14px;padding:14px;color:var(--mute);font-size:14px}
+.na b{color:var(--ink)}
+footer{margin:18px 0 30px;color:var(--mute);font-size:12.5px}
+.err{color:var(--avoid)}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 12px;border-radius:10px;cursor:pointer;font-size:13px}
+.hide{display:none}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.ct{font-size:13px;color:var(--mute);margin-top:4px}
+.costrow{display:flex;gap:8px;align-items:center}
+.costrow input{padding:10px 12px;font-size:15px}
+.big{font-size:30px;font-weight:800;letter-spacing:-1px;color:var(--ink)}
+.cl{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Safar<span>Signal</span></div>
+    <div class="tag">Jaane se pehle check karo: GO ya WAIT ya AVOID</div>
+  </header>
+
+  <div class="searchbox">
+    <input id="q" placeholder="Destination search karo (e.g. Goa, Manali, Paris)..." autocomplete="off">
+    <div id="sugg" class="sugg hide"></div>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div id="out"></div>
+
+  <footer id="foot">
+    Weather &amp; air quality: Open-Meteo (live, free). Holidays: Nager.Date (India: 2026 ki sarkari list). Online interest: Wikipedia pageviews. Flight prices: Aviasales via Travelpayouts (cached, server chahiye). GO/WAIT/AVOID ek simple scoring formula hai (temperature, baarish, hawa, UV, AQI) - official travel advisory nahi hai. Crowd pressure live headcount nahi, public signals se bana sanket hai.
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const WMO = {0:['☀️','Clear'],1:['🌤️','Mostly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],45:['🌫️','Fog'],48:['🌫️','Rime fog'],
+51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌧️','Heavy drizzle'],56:['🌧️','Freezing drizzle'],57:['🌧️','Freezing drizzle'],
+61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],66:['🌧️','Freezing rain'],67:['🌧️','Freezing rain'],
+71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['❄️','Heavy snow'],77:['🌨️','Snow grains'],
+80:['🌦️','Showers'],81:['🌧️','Showers'],82:['⛈️','Violent showers'],85:['🌨️','Snow showers'],86:['❄️','Snow showers'],
+95:['⛈️','Thunderstorm'],96:['⛈️','Thunderstorm, hail'],99:['⛈️','Severe thunderstorm']};
+const wmo = c => WMO[c] || ['🌡️','Unknown'];
+
+// fixed, verified coordinates for popular places (search can pick look-alike villages)
+const P = (name, admin1, country, country_code, latitude, longitude, iata) => ({ name, admin1, country, country_code, latitude, longitude, iata });
+const POPULAR = [
+  P('Goa', 'Goa', 'India', 'IN', 15.4909, 73.8278, 'GOI'),
+  P('Manali', 'Himachal Pradesh', 'India', 'IN', 32.2396, 77.1887, 'KUU'),   // nearest airport: Bhuntar
+  P('Jaipur', 'Rajasthan', 'India', 'IN', 26.9124, 75.7873, 'JAI'),
+  P('Shimla', 'Himachal Pradesh', 'India', 'IN', 31.1048, 77.1734, 'SLV'),
+  P('Kochi', 'Kerala', 'India', 'IN', 9.9312, 76.2673, 'COK'),
+  P('Leh', 'Ladakh', 'India', 'IN', 34.1526, 77.5771, 'IXL'),
+  P('Udaipur', 'Rajasthan', 'India', 'IN', 24.5854, 73.7125, 'UDR'),
+  P('Rishikesh', 'Uttarakhand', 'India', 'IN', 30.0869, 78.2676, 'DED'),   // nearest airport: Dehradun
+  P('Dubai', 'Dubai', 'United Arab Emirates', 'AE', 25.2048, 55.2708, 'DXB'),
+  P('Bangkok', 'Bangkok', 'Thailand', 'TH', 13.7563, 100.5018, 'BKK')
+];
+$('chips').innerHTML = POPULAR.map((p, i) => `<button class="chip" data-i="${i}">${esc(p.name)}</button>`).join('');
+$('chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { const p = POPULAR[+b.dataset.i]; $('q').value = p.name; $('sugg').classList.add('hide'); loadPlace(p); } });
+
+let timer, lastResults = [];
+$('q').addEventListener('input', () => {
+  clearTimeout(timer);
+  const v = $('q').value.trim();
+  if (v.length < 2) { $('sugg').classList.add('hide'); return; }
+  timer = setTimeout(() => searchPlaces(v, false), 300);
+});
+$('q').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); const v = $('q').value.trim(); if (v) searchPlaces(v, true); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.searchbox')) $('sugg').classList.add('hide'); });
+
+async function searchPlaces(name, autoPick, cc) {
+  try {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=10&language=en&format=json${cc ? '&countryCode=' + cc : ''}`);
+    const j = await r.json();
+    const want = name.trim().toLowerCase();
+    // exact-name matches first, then bigger places first
+    lastResults = (j.results || []).sort((a, b) =>
+      ((b.name || '').toLowerCase() === want) - ((a.name || '').toLowerCase() === want) ||
+      (b.population || 0) - (a.population || 0)).slice(0, 6);
+    // a popular place typed by name always comes first, with its fixed location
+    const pre = POPULAR.find(x => x.name.toLowerCase() === want);
+    if (pre) lastResults = [pre, ...lastResults.filter(x => !(x.country_code === pre.country_code && (x.name || '').toLowerCase() === want))];
+    else autoPick = false; // unknown name: let the person choose from the list
+    if (!lastResults.length) {
+      $('sugg').innerHTML = `<button disabled>Kuch nahi mila: ${esc(name)}</button>`;
+      $('sugg').classList.remove('hide'); return;
+    }
+    if (autoPick) { $('sugg').classList.add('hide'); loadPlace(lastResults[0]); return; }
+    $('sugg').innerHTML = lastResults.map((p, i) =>
+      `<button data-i="${i}">${esc(p.name)} <small>${esc([p.admin1, p.country].filter(Boolean).join(', '))}</small></button>`).join('');
+    $('sugg').classList.remove('hide');
+  } catch (e) {
+    $('sugg').innerHTML = `<button disabled class="err">Search fail hua. Internet check karo.</button>`;
+    $('sugg').classList.remove('hide');
+  }
+}
+$('sugg').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b) return;
+  $('sugg').classList.add('hide'); loadPlace(lastResults[+b.dataset.i]);
+});
+
+// ---------- scoring ----------
+function dayScore(d) {
+  const avg = (d.tmax + d.tmin) / 2;
+  let pen = Math.min(40, Math.max(0, Math.abs(avg - 23) - 5) * 3);
+  if (d.tmax > 38) pen += 15;
+  pen += Math.min(35, (d.pop || 0) * 0.3 + Math.min(d.precip || 0, 25) * 1.2);
+  pen += Math.min(15, Math.max(0, (d.wind || 0) - 25) * 0.8);
+  pen += Math.min(10, Math.max(0, (d.uv || 0) - 8) * 2);
+  if ([95, 96, 99, 82, 75, 86].includes(d.code)) pen += 15;
+  return Math.max(0, Math.round(100 - pen));
+}
+const verdictOf = s => s >= 70 ? 'GO' : s >= 45 ? 'WAIT' : 'AVOID';
+const ICON = {GO:'🟢', WAIT:'🟡', AVOID:'🔴'};
+const fmt = t => new Date(t + 'T00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+
+async function loadPlace(p) {
+  $('out').innerHTML = `<div class="card">Live data la raha hu: ${esc(p.name)}...</div>`;
+  const lat = p.latitude, lon = p.longitude;
+  const fUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max` +
+    `&forecast_days=16&timezone=auto`;
+  const aUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5&timezone=auto`;
+  const [fw, aq] = await Promise.allSettled([fetch(fUrl).then(r => r.json()), fetch(aUrl).then(r => r.json())]);
+  if (fw.status !== 'fulfilled' || !fw.value.daily) {
+    $('out').innerHTML = `<div class="card err">Weather data nahi aa paya. Thodi der baad dobara try karo.</div>`; return;
+  }
+  render(p, fw.value, aq.status === 'fulfilled' ? aq.value : null);
+}
+
+function aqiLabel(a) {
+  if (a == null) return '-';
+  return a <= 50 ? 'Good' : a <= 100 ? 'Moderate' : a <= 150 ? 'Unhealthy (sensitive)' : a <= 200 ? 'Unhealthy' : a <= 300 ? 'Very unhealthy' : 'Hazardous';
+}
+
+function render(p, w, aq) {
+  const D = w.daily;
+  const days = D.time.map((t, i) => {
+    const o = { date: t, code: D.weather_code[i], tmax: D.temperature_2m_max[i], tmin: D.temperature_2m_min[i],
+      precip: D.precipitation_sum[i], pop: D.precipitation_probability_max[i], wind: D.wind_speed_10m_max[i], uv: D.uv_index_max[i] };
+    o.score = dayScore(o); o.v = verdictOf(o.score); return o;
+  });
+  const aqi = aq && aq.current ? aq.current.us_aqi : null;
+  const cur = w.current;
+
+  // overall verdict: next 5 days
+  const next = days.slice(0, 5);
+  let overall = Math.round(next.reduce((a, d) => a + d.score, 0) / next.length);
+  let v = verdictOf(overall);
+  const why = [];
+  const rainy = next.filter(d => (d.pop || 0) >= 60).length;
+  const hot = next.filter(d => d.tmax > 38).length;
+  const cold = next.filter(d => d.tmin < 3).length;
+  if (rainy) why.push(`Agle 5 din me ${rainy} din baarish ka chance 60%+ hai`);
+  if (hot) why.push(`${hot} din ka max temperature 38°C se upar`);
+  if (cold) why.push(`${cold} din raat ka temperature 3°C se neeche`);
+  if (aqi != null && aqi > 150) {
+    why.push(`Air quality kharab hai (US AQI ${aqi})`);
+    if (aqi > 200) v = 'AVOID'; else if (v === 'GO') v = 'WAIT';
+  }
+  if (!why.length) why.push('Agle 5 din ka weather mostly comfortable dikh raha hai');
+
+  // best windows: 3-day consecutive
+  const wins = [];
+  for (let i = 0; i + 2 < days.length; i++) {
+    const s = Math.round((days[i].score + days[i + 1].score + days[i + 2].score) / 3);
+    wins.push({ i, s });
+  }
+  wins.sort((a, b) => b.s - a.s);
+  const picked = [];
+  for (const wd of wins) { if (picked.every(x => Math.abs(x.i - wd.i) >= 3)) picked.push(wd); if (picked.length === 3) break; }
+
+  const bestHTML = picked.map(x => {
+    const a = days[x.i], c = days[x.i + 2];
+    return `<div class="bd"><b>${fmt(a.date)} → ${fmt(c.date)}</b><div>${ICON[verdictOf(x.s)]} Score ${x.s}/100</div><div class="ct" data-i="${x.i}">👥 crowd check ho raha hai...</div></div>`;
+  }).join('');
+
+  const stripHTML = days.map(d => `<div class="day"><div class="d">${fmt(d.date)}</div><div class="e">${wmo(d.code)[0]}</div>
+    <div class="t">${Math.round(d.tmax)}° / ${Math.round(d.tmin)}°</div><div class="p">💧 ${d.pop ?? 0}%</div><span class="dot ${d.v}"></span></div>`).join('');
+
+  const updated = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  const place = [p.name, p.admin1, p.country].filter(Boolean).join(', ');
+
+  $('out').innerHTML = `
+  <div class="card">
+    <div class="hero">
+      <div><div class="place">${esc(p.name)}</div><div class="sub">${esc([p.admin1, p.country].filter(Boolean).join(', '))}</div></div>
+      <div class="badge ${v}">${ICON[v]} ${v}<small>Score ${overall}/100 (next 5 days)</small></div>
+    </div>
+    <div class="now">
+      <div><div class="temp">${Math.round(cur.temperature_2m)}°C</div><div class="sub">${wmo(cur.weather_code)[0]} ${wmo(cur.weather_code)[1]} · feels ${Math.round(cur.apparent_temperature)}°</div></div>
+      <div class="stats">
+        <div class="stat"><b>${cur.relative_humidity_2m}%</b><span>Humidity</span></div>
+        <div class="stat"><b>${Math.round(cur.wind_speed_10m)} km/h</b><span>Wind</span></div>
+        <div class="stat"><b>${cur.precipitation} mm</b><span>Rain now</span></div>
+        <div class="stat"><b>${aqi != null ? aqi : 'N/A'}</b><span>US AQI ${aqi != null ? '· ' + aqiLabel(aqi) : ''}</span></div>
+      </div>
+    </div>
+    <ul class="why">${why.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+  </div>
+
+  <div class="card"><h2>📅 Best dates (next 16 days)</h2><div class="best">${bestHTML}</div>
+    <div class="sub" style="margin-top:8px">3-din ke best windows, forecast ke hisaab se. Door ke din kam bharosemand hote hain.</div></div>
+
+  <div class="card"><h2>🗓️ 16-day forecast</h2><div class="strip">${stripHTML}</div></div>
+
+  <div class="grid2">
+    <div class="card"><h2>👥 Crowd pressure</h2>
+      <div id="crowdBody" class="sub">Public data check ho raha hai...</div></div>
+    <div class="card"><h2>💰 Flight price</h2>
+      <div class="costrow"><input id="origin" placeholder="Kahan se? (e.g. Delhi)"><button class="btn" id="priceBtn">Price check</button></div>
+      <div id="costBody" class="na" style="margin-top:10px">Apna shehar likho aur <b>Price check</b> dabao.</div></div>
+  </div>
+
+  <div class="card"><h2>🕐 Data info</h2>
+    <div class="sub">Last updated: ${esc(updated)} · Location: ${esc(place)} (${p.latitude.toFixed(2)}, ${p.longitude.toFixed(2)})<br>
+    Sources: Open-Meteo Forecast API, Open-Meteo Air Quality API, Open-Meteo Geocoding API.</div>
+    <div style="margin-top:10px"><button class="btn" id="refresh">🔄 Refresh</button></div>
+  </div>`;
+  $('refresh').onclick = () => loadPlace(p);
+  loadCrowd(p, days, picked);
+  initCost(p, days, picked);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---------- crowd (public signals, not a live headcount) ----------
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+const tfetch = u => fetch(u, { signal: AbortSignal.timeout(8000) });
+
+// Nager.Date has no India data, so India uses the 2026 central-government list
+// (source: globalholidayscalendar.com, DoPT gazetted holidays). Add 2027 when published.
+const IN_2026 = [
+  ['2026-01-26', 'Republic Day'], ['2026-03-04', 'Holi'], ['2026-03-21', 'Id-ul-Fitr'], ['2026-03-26', 'Ram Navami'],
+  ['2026-03-31', 'Mahavir Jayanti'], ['2026-04-03', 'Good Friday'], ['2026-05-01', 'Buddha Purnima'],
+  ['2026-05-27', 'Id-ul-Zuha (Bakrid)'], ['2026-06-26', 'Muharram'], ['2026-08-15', 'Independence Day'],
+  ['2026-08-26', 'Milad-un-Nabi'], ['2026-09-04', 'Janmashtami'], ['2026-10-02', 'Gandhi Jayanti'],
+  ['2026-10-20', 'Dussehra'], ['2026-11-08', 'Diwali'], ['2026-11-24', 'Guru Nanak Jayanti'], ['2026-12-25', 'Christmas']
+].map(([date, localName]) => ({ date, localName }));
+
+async function getHolidays(cc, years) {
+  if (!cc) throw new Error('no country');
+  if (cc === 'IN') {
+    if (years.some(y => y !== '2026')) throw new Error('India holiday list covers 2026 only');
+    return IN_2026;
+  }
+  const out = [];
+  for (const y of years) {
+    const r = await tfetch(`https://date.nager.at/api/v3/PublicHolidays/${y}/${cc}`);
+    if (!r.ok) throw new Error('holidays unavailable');
+    out.push(...await r.json());
+  }
+  return out;
+}
+
+async function getInterest(name) {
+  const s = await (await tfetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(name)}&limit=1&format=json&origin=*`)).json();
+  const title = s[1] && s[1][0];
+  if (!title) throw new Error('no article');
+  const end = new Date(); end.setDate(end.getDate() - 1);
+  const start = new Date(); start.setDate(start.getDate() - 120);
+  const f = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}00`;
+  const u = `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/${encodeURIComponent(title.replace(/ /g, '_'))}/daily/${f(start)}/${f(end)}`;
+  const r = await tfetch(u);
+  if (!r.ok) throw new Error('no pageviews');
+  const v = ((await r.json()).items || []).map(i => i.views);
+  if (v.length < 40) throw new Error('too little data');
+  const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+  const recent = avg(v.slice(-14)), base = avg(v.slice(0, -14));
+  if (!base) throw new Error('no baseline');
+  return { title, ratio: recent / base };
+}
+
+const LEVEL = { Low: ['GO', 'Kam'], Medium: ['WAIT', 'Medium'], High: ['AVOID', 'Zyada'] };
+const pill = lv => `<span class="pill ${LEVEL[lv][0]}">${LEVEL[lv][1]}</span>`;
+
+async function loadCrowd(p, days, picked) {
+  try { await loadCrowdInner(p, days, picked); }
+  catch (e) {
+    const b = $('crowdBody');
+    if (b) b.innerHTML = '<div class="na"><b>Crowd data unavailable</b><br>Public data abhi nahi mil paya.</div>';
+    document.querySelectorAll('.ct').forEach(el => { el.innerHTML = '👥 Crowd data unavailable'; });
+  }
+}
+
+async function loadCrowdInner(p, days, picked) {
+  const body = $('crowdBody'); if (!body) return;
+  const years = [...new Set([days[0].date.slice(0, 4), days[days.length - 1].date.slice(0, 4)])];
+  const [hol, intr] = await Promise.allSettled([getHolidays(p.country_code, years), getInterest(p.name)]);
+  const hmap = {};
+  if (hol.status === 'fulfilled') hol.value.forEach(h => { hmap[h.date] = h.localName || h.name; });
+  const ratio = intr.status === 'fulfilled' ? intr.value.ratio : null;
+  const bump = ratio != null && ratio > 1.3 ? 1 : 0;
+
+  // per best-window crowd pressure
+  document.querySelectorAll('.ct').forEach(el => {
+    const i = +el.dataset.i;
+    if (hol.status !== 'fulfilled') { el.innerHTML = '👥 Crowd data unavailable'; return; }
+    let pts = 0, hd = 0, we = 0;
+    for (let k = 0; k < 3; k++) {
+      const d = days[i + k].date;
+      const wd = new Date(d + 'T00:00').getDay();
+      if (hmap[d]) { hd++; pts += 2; }
+      if (wd === 0 || wd === 6) { we++; pts += 1; }
+    }
+    pts += bump;
+    const lv = pts >= 4 ? 'High' : pts >= 2 ? 'Medium' : 'Low';
+    el.innerHTML = `👥 Crowd pressure: ${pill(lv)} <span>(${hd} holiday, ${we} weekend din)</span>`;
+  });
+
+  const lines = [];
+  if (intr.status === 'fulfilled') {
+    const r = ratio, lab = r > 1.3 ? 'normal se zyada' : r < 0.8 ? 'normal se kam' : 'normal ke aas-paas';
+    lines.push(`Online interest: <b>${r.toFixed(2)}x</b> (${lab}) - Wikipedia "${esc(intr.value.title)}" ke pichhle 14 din vs pehle ke mahine.`);
+  } else lines.push('Online interest: data unavailable.');
+  if (hol.status === 'fulfilled') {
+    const up = days.filter(d => hmap[d.date]).slice(0, 5);
+    lines.push(up.length ? 'Public holidays (agle 16 din): ' + up.map(d => `${esc(fmt(d.date))} - ${esc(hmap[d.date])}`).join('; ') : 'Agle 16 din me koi public holiday nahi mila.');
+  } else lines.push('Holiday data unavailable is country ke liye.');
+
+  body.innerHTML = `<ul class="cl">${lines.map(l => `<li>${l}</li>`).join('')}</ul>
+    <div class="na" style="margin-top:10px"><b>Live headcount nahi hai.</b> Ye chhuttiyon, weekends aur online interest se bana sanket hai. Jagah-wise asli foot traffic ke liye paid source (jaise BestTime) chahiye.</div>`;
+}
+
+// ---------- flight price via local server (Amadeus) ----------
+function initCost(p, days, picked) {
+  const o = $('origin'); if (!o) return;
+  try { o.value = localStorage.getItem('ts_origin') || 'Delhi'; } catch (e) { o.value = 'Delhi'; }
+  const best = picked.length ? days[picked[0].i].date : days[1].date;
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  const date = best > ymd(tomorrow) ? best : ymd(tomorrow);
+  const out = $('costBody');
+  $('priceBtn').onclick = async () => {
+    const from = o.value.trim(); if (!from) return;
+    try { localStorage.setItem('ts_origin', from); } catch (e) {}
+    if (location.protocol === 'file:') {
+      out.innerHTML = '<b>Live prices unavailable</b><br>Prices ke liye page ko server se kholo: <code>node server.js</code> chalao aur <code>http://localhost:3000</code> kholo.'; return;
+    }
+    out.textContent = 'Price la raha hu...';
+    try {
+      const r = await fetch(`/api/flights?from=${encodeURIComponent(from)}&to=${encodeURIComponent(p.name)}&toCode=${encodeURIComponent(p.iata || '')}&date=${date}`);
+      const j = await r.json();
+      if (!r.ok || !j.ok) { out.innerHTML = `<b>Live prices unavailable</b><br>${esc(j.error || 'Server se jawab nahi mila')}`; return; }
+      out.innerHTML = `<div class="big">${esc(j.currency === 'INR' ? '₹' : j.currency + ' ')}${Number(j.price).toLocaleString('en-IN')}</div>
+        <div>${esc(j.from)} → ${esc(j.to)} · ${esc(fmt(j.date))} · ${j.stops === 0 ? 'nonstop' : j.stops + ' stop'} · ${esc(j.airline || '')}</div>
+        <div style="margin-top:6px">${j.count} cached fare${j.count > 1 ? 's' : ''} me sabse sasta, one-way, 1 passenger. Source: Aviasales via Travelpayouts · ${esc(new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }))}
+        ${j.exact ? '' : `<br><i>${esc(fmt(j.asked))} ka cached price nahi mila, isliye us mahine ka agla sabse sasta dikha raha hu.</i>`}
+        <br><i>Ye cached price hai (2-7 din purana ho sakta hai), live booking price nahi.</i></div>`;
+    } catch (e) {
+      out.innerHTML = '<b>Live prices unavailable</b><br>Server nahi chal raha. <code>node server.js</code> chalao aur <code>http://localhost:3000</code> se kholo.';
+    }
+  };
+}
+</script>
+</body>
+</html>
