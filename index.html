@@ -60,6 +60,9 @@ footer{margin:18px 0 30px;color:var(--mute);font-size:12.5px}
 .err{color:var(--avoid)}
 .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 12px;border-radius:10px;cursor:pointer;font-size:13px}
 .hide{display:none}
+.lnk{display:inline-block;text-decoration:none;margin:6px 8px 0 0;color:var(--ink)}
+.lnk:hover{border-color:var(--brand)}
+.lnkh{font-size:12px;color:var(--mute);margin-top:12px}
 .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
 .ct{font-size:13px;color:var(--mute);margin-top:4px}
 .costrow{display:flex;gap:8px;align-items:center}
@@ -84,7 +87,7 @@ footer{margin:18px 0 30px;color:var(--mute);font-size:12.5px}
   <div id="out"></div>
 
   <footer id="foot">
-    Weather &amp; air quality: Open-Meteo (live, free). Holidays: Nager.Date (India: 2026 ki sarkari list). Online interest: Wikipedia pageviews. Flight prices: Aviasales via Travelpayouts (cached, server chahiye). GO/WAIT/AVOID ek simple scoring formula hai (temperature, baarish, hawa, UV, AQI) - official travel advisory nahi hai. Crowd pressure live headcount nahi, public signals se bana sanket hai.
+    Weather &amp; air quality: Open-Meteo (live, free). Holidays: Nager.Date (India: 2026 ki sarkari list). Online interest: Wikipedia pageviews. Flight prices: Aviasales via Travelpayouts (cached, server chahiye). GO/WAIT/AVOID ek simple scoring formula hai (temperature, baarish, hawa, UV, AQI) - official travel advisory nahi hai. Crowd pressure live headcount nahi, public signals se bana sanket hai. Train/bus: sirf asli sites ke links aur doori ka andaza, price ya seat nahi.
   </footer>
 </div>
 
@@ -274,6 +277,9 @@ function render(p, w, aq) {
       <div id="costBody" class="na" style="margin-top:10px">Apna shehar likho aur <b>Price check</b> dabao.</div></div>
   </div>
 
+  <div class="card"><h2>🚆🚌 Train aur Bus</h2>
+    <div id="transitBody" class="sub">Route dekh raha hu...</div></div>
+
   <div class="card"><h2>🕐 Data info</h2>
     <div class="sub">Last updated: ${esc(updated)} · Location: ${esc(place)} (${p.latitude.toFixed(2)}, ${p.longitude.toFixed(2)})<br>
     Sources: Open-Meteo Forecast API, Open-Meteo Air Quality API, Open-Meteo Geocoding API.</div>
@@ -282,6 +288,7 @@ function render(p, w, aq) {
   $('refresh').onclick = () => loadPlace(p);
   loadCrowd(p, days, picked);
   initCost(p, days, picked);
+  initTransit(p);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -383,6 +390,49 @@ async function loadCrowdInner(p, days, picked) {
 
   body.innerHTML = `<ul class="cl">${lines.map(l => `<li>${l}</li>`).join('')}</ul>
     <div class="na" style="margin-top:10px"><b>Live headcount nahi hai.</b> Ye chhuttiyon, weekends aur online interest se bana sanket hai. Jagah-wise asli foot traffic ke liye paid source (jaise BestTime) chahiye.</div>`;
+}
+
+// ---------- train & bus: links and distance estimate only (no free price/seat source exists) ----------
+const hav = (a, b) => {
+  const d = x => x * Math.PI / 180, dLa = d(b.latitude - a.latitude), dLo = d(b.longitude - a.longitude);
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(d(a.latitude)) * Math.cos(d(b.latitude)) * Math.sin(dLo / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+};
+
+function initTransit(p) {
+  const o = $('origin'), box = $('transitBody'); if (!o || !box) return;
+  let timer, seq = 0;
+  const run = async () => {
+    const from = o.value.trim(), my = ++seq;
+    if (!from) { box.innerHTML = '<div class="na">Flight card me "Kahan se?" me apna shehar likho.</div>'; return; }
+    box.textContent = 'Route dekh raha hu...';
+    let org = null;
+    try {
+      const r = await tfetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(from)}&count=10&language=en&format=json`);
+      const res = (await r.json()).results || [];
+      const big = (a, b) => (b.population || 0) - (a.population || 0);
+      org = res.filter(x => x.country_code === p.country_code).sort(big)[0] || res.sort(big)[0] || null;
+    } catch (e) { /* handled below */ }
+    if (my !== seq) return;
+    if (!org) { box.innerHTML = `<div class="na"><b>Shehar nahi mila</b><br>"${esc(from)}" ka route nahi nikal paya. Naam dobara check karo.</div>`; return; }
+    if (org.country_code !== p.country_code) {
+      box.innerHTML = `<div class="na"><b>${esc(org.name)} aur ${esc(p.name)} alag desh me hain.</b><br>Train/bus ke liye ye route kaam ka nahi, flight dekho.</div>`; return;
+    }
+    const km = Math.round(hav(org, p));
+    const g = mode => `https://www.google.com/search?q=${encodeURIComponent(`${mode} from ${org.name} to ${p.name}`)}`;
+    const a = (href, label) => `<a class="btn lnk" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    box.innerHTML = `
+      <div><b>${esc(org.name)} → ${esc(p.name)}</b> · seedhi doori lagbhag <b>${km} km</b>
+        <span class="sub">(andaza; sadak ya patri se zyada hogi)</span></div>
+      ${km > 1500 ? '<div class="sub" style="margin-top:4px">Itni door ke liye train/bus lambi ho sakti hai, flight se compare kar lo.</div>' : ''}
+      <div class="lnkh">🚆 Train</div>
+      <div>${a(g('train'), 'Google: route ke saath')}${a('https://www.irctc.co.in/nget/train-search', 'IRCTC')}${a('https://www.ixigo.com/trains', 'ixigo')}</div>
+      <div class="lnkh">🚌 Bus</div>
+      <div>${a(g('bus'), 'Google: route ke saath')}${a('https://www.redbus.in/', 'redBus')}</div>
+      <div class="na" style="margin-top:12px"><b>Price aur seat yaha nahi dikhte.</b> Free me asli train/bus price ka koi source nahi hai, isliye ye links asli sites kholte hain. IRCTC, ixigo aur redBus pe route khud bharna hoga.</div>`;
+  };
+  o.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 600); });
+  run();
 }
 
 // ---------- flight price via local server (Amadeus) ----------
